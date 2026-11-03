@@ -34,6 +34,7 @@ import { accessService } from "../services/access.js";
 import { logActivity } from "../services/activity-log.js";
 import { aiConnectionRouterService } from "../services/ai-connection-router.js";
 import { aiConnectionService } from "../services/ai-connections.js";
+import { assertAiPrivateHttpEndpointAllowed } from "../services/ai-private-http-endpoint-policy.js";
 import { validate } from "../middleware/validate.js";
 import { probeCopilotConnection } from "../services/copilot-connection-probe.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
@@ -314,6 +315,7 @@ export function aiConnectionRoutes(db: Db, options: Parameters<typeof supportsLo
     async (req, res) => {
       const companyId = req.params.companyId as string;
       const input = createAiConnectionSchema.parse(req.body);
+      if (input.routing?.baseUrl) assertAiPrivateHttpEndpointAllowed(input.routing.baseUrl);
       const userId = await assertAiConnectionCreateAccess(
         db,
         req,

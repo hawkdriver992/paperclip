@@ -457,7 +457,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
 
     it.each([true, false, undefined].flatMap(enableNativeRunner =>
       (["paperclip", "legacy"] as const).map(defaultRunner => ({ enableNativeRunner, defaultRunner })),
-    ))("offers the same Claude and Codex choices with $defaultRunner availability and native runner setting $enableNativeRunner", async ({ enableNativeRunner, defaultRunner }) => {
+    ))("offers Claude, Codex, and OpenCode with $defaultRunner availability and native runner setting $enableNativeRunner", async ({ enableNativeRunner, defaultRunner }) => {
       mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableManagedSandboxOnly: false, enableNativeRunner });
       mockAdaptersApi.list.mockResolvedValue(["claude_local", "codex_local"].map(type =>
         setupAdapterInfo({ type, defaultRunner, supportedRunners: defaultRunner === "paperclip" ? ["paperclip", "legacy"] : ["legacy"] }),
@@ -465,9 +465,9 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       const root = await openProviderChoices();
       try {
         const sources = [...document.body.querySelectorAll("button[aria-checked]")];
-        expect(sources).toHaveLength(2);
+        expect(sources).toHaveLength(3);
         expect(sources.map(source => source.textContent)).toEqual([
-          expect.stringContaining("Claude"), expect.stringContaining("OpenAI"),
+          expect.stringContaining("Claude"), expect.stringContaining("OpenAI"), expect.stringContaining("Local OpenAI-compatible endpoint"),
         ]);
         expect(document.body.textContent).not.toContain("GitHub Copilot");
         expect(document.body.textContent).not.toContain("Windows");
@@ -480,8 +480,10 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       const root = await openProviderChoices();
       try {
         const sources = [...document.body.querySelectorAll("button[aria-checked]")];
-        expect(sources).toHaveLength(1);
-        expect(sources[0]?.textContent).toContain("OpenAI");
+        expect(sources).toHaveLength(2);
+        expect(sources.map(source => source.textContent)).toEqual([
+          expect.stringContaining("OpenAI"), expect.stringContaining("Local OpenAI-compatible endpoint"),
+        ]);
       } finally { await act(async () => root.unmount()); }
     });
 
@@ -514,13 +516,13 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
     });
 
     it.each([false, true])("explains unavailable onboarding providers and clears an old Copilot draft: %s", async savedCopilot => {
-      mockAdapterRegistry.disabled = new Set(["claude_local", "codex_local"]);
+      mockAdapterRegistry.disabled = new Set(["claude_local", "codex_local", "opencode_local"]);
       const root = await openProviderChoices(savedCopilot ? {
         adapterType: "paperclip_runner", onboardingCopilot: true, runner: "paperclip", model: "copilot-model",
       } : {});
       try {
         expect(document.body.querySelectorAll("button[aria-checked]")).toHaveLength(0);
-        expect(document.body.textContent).toContain("Claude and Codex are unavailable on this instance.");
+        expect(document.body.textContent).toContain("Claude, Codex, and OpenCode are unavailable on this instance.");
         expect(document.body.textContent).toContain("choose New Agent on the Agents page");
         const next = [...document.body.querySelectorAll("button")].find(button => isArcPrimary(button.textContent?.trim() ?? ""));
         expect(next?.disabled).toBe(true);

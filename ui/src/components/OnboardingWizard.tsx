@@ -155,7 +155,7 @@ type Step = 0 | 1 | 2 | 3 | 4 | 5;
 // wizard's registry-driven approach rather than a fixed union.
 type AdapterType = string;
 
-const ONBOARDING_ADAPTER_TYPES = new Set(["claude_local", "codex_local"]);
+const ONBOARDING_ADAPTER_TYPES = new Set(["claude_local", "codex_local", "opencode_local"]);
 
 function restoreOnboardingAdapterType(savedAdapterType: unknown, provider?: unknown, savedCopilot?: unknown): AdapterType {
   if (savedAdapterType === "paperclip_runner" && provider === "pi") return "pi_local";
@@ -1245,8 +1245,8 @@ function OnboardingWizardInner({
       .map((a) => ({ ...getAdapterDisplay(a.type), type: a.type }));
 
     return {
-      recommendedAdapters: all.filter((a) => a.recommended),
-      moreAdapters: all.filter((a) => !a.recommended),
+      recommendedAdapters: all.filter((a) => a.recommended || a.type === "opencode_local"),
+      moreAdapters: all.filter((a) => !a.recommended && a.type !== "opencode_local"),
     };
   }, [disabledTypes]);
 
@@ -2986,7 +2986,9 @@ function OnboardingWizardInner({
                       label="Model source"
                       sources={recommendedAdapters.map((opt) => ({
                         id: opt.type,
-                        label: CONNECT_SOURCE_NAMES[opt.type] ?? opt.label,
+                        label: opt.type === "opencode_local"
+                          ? "Local OpenAI-compatible endpoint"
+                          : CONNECT_SOURCE_NAMES[opt.type] ?? opt.label,
                         icon: <ModelSourceMark type={opt.type} Fallback={opt.icon} />,
                       }))}
                       mode={credentialMode}
@@ -3014,7 +3016,7 @@ function OnboardingWizardInner({
 
                     {adapterRegistryLoaded && recommendedAdapters.length === 0 && (
                       <p role="status" className="text-sm text-muted-foreground">
-                        Claude and Codex are unavailable on this instance. Ask an administrator to enable one,
+                        Claude, Codex, and OpenCode are unavailable on this instance. Ask an administrator to enable one,
                         or exit setup and choose New Agent on the Agents page to use another provider.
                       </p>
                     )}
@@ -3129,7 +3131,7 @@ function OnboardingWizardInner({
                           onChange={setModel} open={modelOpen} onOpenChange={setModelOpen}
                           allowDefault={false} required groupByProvider={false}
                           creatable={connectionModels.models.length === 0} presentation="native" />}
-                        {createdCompanyId && (adapterType === "codex_local" || adapterType === "claude_local") && <OnboardingGatewaySetup
+                        {createdCompanyId && (adapterType === "codex_local" || adapterType === "claude_local" || adapterType === "opencode_local") && <OnboardingGatewaySetup
                           companyId={createdCompanyId} agentId={setupAgentId ?? undefined} environmentId={resolvedLoginEnvironmentId ?? undefined}
                           adapterType={adapterType} disabled={loading || adapterEnvLoading}
                           onComplete={binding => {

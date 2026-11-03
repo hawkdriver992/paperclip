@@ -15,6 +15,7 @@ import {
   type AiConnectionBinding,
 } from "@paperclipai/shared";
 import { managedProviderRouting } from "./ai-provider-routing.js";
+import { assertAiPrivateHttpEndpointAllowed } from "./ai-private-http-endpoint-policy.js";
 import { aiConnectionService } from "./ai-connections.js";
 import { subscriptionService } from "./subscriptions.js";
 import { refreshSubscriptionConnection } from "./subscription-refresh.js";
@@ -303,6 +304,7 @@ export async function prepareManagedAiRuntime(
       );
     const credentialRef = selection.grant.credentialSecretRefs.find((ref) => ref.configPath === "ai.credential");
     const routing = aiConnectionMetadataSchema.parse(selection.connection.config.ai).routing;
+    if (routing?.baseUrl) assertAiPrivateHttpEndpointAllowed(routing.baseUrl);
     const noAuth = routing?.auth === "none";
     if (!noAuth && !credentialRef) throw unprocessable("The selected AI credential is unavailable");
     const readFreshness = async () => {

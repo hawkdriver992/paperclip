@@ -15,7 +15,7 @@ export function OnboardingGatewaySetup({
   companyId: string;
   agentId?: string;
   environmentId?: string;
-  adapterType: "codex_local" | "claude_local";
+  adapterType: "codex_local" | "claude_local" | "opencode_local";
   disabled?: boolean;
   onComplete: (binding: Exclude<AiConnectionBinding, { mode: "responsible_user" }>) => void;
 }) {
@@ -31,7 +31,7 @@ export function OnboardingGatewaySetup({
           <DialogDescription>Save the connection, then choose a model and test it with your agent.</DialogDescription>
         </DialogHeader>
         <AiProviderSetup companyId={companyId} agentId={agentId} environmentId={environmentId}
-          initialProvider="gateway" initialProtocol={adapterType === "codex_local" ? "responses" : "messages"}
+          initialProvider="gateway" initialProtocol={adapterType === "codex_local" ? "responses" : adapterType === "claude_local" ? "messages" : "chat"}
           submitLabel="Save connection" onCancel={() => setOpen(false)}
           onComplete={binding => { setOpen(false); onComplete(binding); }} />
       </DialogContent>

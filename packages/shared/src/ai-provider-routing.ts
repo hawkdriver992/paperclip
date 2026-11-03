@@ -57,12 +57,13 @@ export const aiProviderRoutingSchema = z
         const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(
           url.hostname,
         );
+        const privateIpv4 = /^10\.|^192\.168\.|^172\.(?:1[6-9]|2\d|3[01])\./.test(url.hostname);
         if (
           url.username ||
           url.password ||
           url.search ||
           url.hash ||
-          (url.protocol !== "https:" && !(url.protocol === "http:" && loopback))
+          (url.protocol !== "https:" && !(url.protocol === "http:" && (loopback || privateIpv4)))
         )
           throw new Error();
         if (route.kind === "local" && !loopback)
